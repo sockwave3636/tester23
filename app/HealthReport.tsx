@@ -48,7 +48,7 @@ const PATIENT = {
   patientId: "AV-2026-2043",
   age: 24,
   gender: "male",
-  dateOfReport: "16 Feb 2026",
+  dateOfReport: "16 Mar 2026",
 };
 
 const LAB_FINDINGS = [
@@ -56,35 +56,41 @@ const LAB_FINDINGS = [
     test: "Vitamin D",
     yourValue: "18",
     idealRange: "30–100",
-    meaning: "Low – may affect bone strength",
-    subMeaning: "Bone tissue (Asthi) mild deficiency",
+    meaning: "Deficiency affecting bone mineralization",
+    ayurvedicCorrelation: "Asthi Dhatu Kshaya (Bone depletion)",
   },
   {
     test: "HbA1c",
     yourValue: "6.2",
     idealRange: "<5.7",
-    meaning: "Borderline glycemic control",
-    subMeaning: "Fat tissue (Meda) Mild accumulation",
+    meaning: "Impaired glucose metabolism (Prediabetic trend)",
+    ayurvedicCorrelation: "Meda Dushti (Fat tissue) + Agni Deficiency",
   },
   {
     test: "CRP",
     yourValue: "5",
     idealRange: "<1",
-    meaning: "Mild inflammation present",
-    subMeaning: "Toxin load (Ama) present",
+    meaning: "Ongoing low-grade inflammation",
+    ayurvedicCorrelation: "Ama (Toxin) accumulation + Pitta aggravation",
   },
 ];
 
-const HEALTH_SCORECARD = [
-  // only include metrics requested for section 2
-  { healthArea: "Bone Health Index", score: 65, status: "Needs Attention" },
-  { healthArea: "Cardiovascular Index", score: 72, status: "Early Risk" },
-  { healthArea: "Metabolic Index", score: 78, status: "Mild Imbalance" },
-  { healthArea: "Inflammation Status Index", score: 55, status: "Moderate" },
-  { healthArea: "Immune Function Index", score: 68, status: "Mild Deficient" },
-  { healthArea: "Hematology Health Index", score: 85, status: "Optimal" },
-  { healthArea: "Liver Function Index", score: 82, status: "Optimal" },
-  { healthArea: "Kidney Function", score: 92, status: "Optimal" },
+const ORGAN_SCORECARD = [
+  { system: "Kidney", score: 78, status: "Mild Risk", insight: "Early filtration stress" },
+  { system: "Liver", score: 65, status: "Moderate Risk", insight: "Metabolic overload / detox inefficiency" },
+  { system: "Thyroid", score: 72, status: "Early Risk", insight: "Suboptimal hormonal regulation" },
+  { system: "Heart", score: 82, status: "Optimal", insight: "Good cardiovascular status" },
+  { system: "Pancreas", score: 68, status: "Mild Risk", insight: "Insulin resistance trend" },
+];
+
+const COMPOSITE_INDICES = [
+  { index: "Inflammation Index", score: 55, interpretation: "Moderate systemic inflammation" },
+  { index: "Immune Health Index", score: 68, interpretation: "Mildly compromised immunity" },
+  { index: "Bone Health Index", score: 65, interpretation: "Early bone weakening (Osteopenia risk)" },
+  { index: "Metabolic Index", score: 62, interpretation: "Reduced metabolic efficiency" },
+  { index: "Gut Health Index", score: 58, interpretation: "Impaired digestion & absorption" },
+  { index: "Hormonal Health Index", score: 75, interpretation: "Mild imbalance" },
+  { index: "Stress Recovery Index", score: 70, interpretation: "Moderate stress management capacity" },
 ];
 
 const BHI_RANGES = [
@@ -95,33 +101,55 @@ const BHI_RANGES = [
 ];
 
 // radar chart data for section 2 – built from the (now trimmed) HEALTH_SCORECARD
-const RADAR_DATA = HEALTH_SCORECARD.map((h) => ({ subject: h.healthArea, score: h.score }));
+const RADAR_DATA = COMPOSITE_INDICES.map((h) => ({ subject: h.index, score: h.score }));
 
 const AYURVEDA_PARAMS = [
-  { name: "Agni - Digestive Fire", value: 60, desc: "Mildly weak digestion" },
-  { name: "Ama - Toxin load", value: 65, desc: "Moderate toxin accumulation" },
-  { name: "Ojas - Vitality", value: 82, desc: "Good vitality reserve" },
-  { name: "Rasa - Plasma", value: 78, desc: "Plasma balance — mild kshaya" },
-  { name: "Rakta - Blood Tissue", value: 35, desc: "Moderate deficiency (anemia)" },
-  { name: "Mamsa - Muscle Tissue", value: 82, desc: "Muscle tissue balanced" },
-  { name: "Meda - Fat Tissue", value: 55, desc: "Moderate fat/tissue accumulation" },
-  { name: "Asthi - Bone Tissue", value: 65, desc: "Bone strength reduced — care needed" },
-  { name: "Majja - Bone marrow", value: 72, desc: "Bone marrow / nerve reserve good" },
-  { name: "Shukra - Reproductive Tissue", value: 48, desc: "Low reproductive reserve / weak" },
+  { name: "Agni (Digestive Power)", value: 60, desc: "Mildly impaired digestion" },
+  { name: "Ama (Toxin Load)", value: 65, desc: "Moderate accumulation" },
+  { name: "Ojas (Vitality Reserve)", value: 82, desc: "Good resilience" },
 ];
 
-const DHATU = [
-  { name: "Rasa (Plasma)", value: 78, label: "Mild Kshaya" },
-  { name: "Rakta (Blood)", value: 35, label: "Moderate Deficiency (Anemia)" },
-  { name: "Mamsa (Muscle)", value: 82, label: "Balanced" },
-  { name: "Asthi (Bone)", value: 65, label: "Moderate Deficiency (osteopenia)" },
+const DHATU_ASSESSMENT = [
+  { name: "Rasa (Plasma/Nutrition)", value: 78, status: "Mild Deficiency", interpretation: "Suboptimal nourishment, hydration needs improvement" },
+  { name: "Rakta (Blood)", value: 35, status: "Moderate Deficiency", interpretation: "Anemia, reduced oxygenation" },
+  { name: "Mamsa (Muscle)", value: 82, status: "Balanced", interpretation: "Good muscle strength" },
+  { name: "Meda (Fat/Metabolic Tissue)", value: 68, status: "Mild Deficiency", interpretation: "Early fat metabolism imbalance" },
+  { name: "Asthi (Bone)", value: 65, status: "Moderate Deficiency", interpretation: "Bone density reduction (osteopenia risk)" },
+  { name: "Majja (Nervous Tissue)", value: 72, status: "Mild Deficiency", interpretation: "Nervous system depletion / stress impact" },
+  { name: "Shukra (Reproductive Tissue)", value: 80, status: "Near Optimal", interpretation: "Good reproductive vitality" },
 ];
 
-const RISKS = [
-  "Prediabetes progression risk → Moderate",
-  "Bone thinning (osteopenia) risk → Moderate",
-  "Early heart risk → Mild",
-  "Chronic inflammation tendency → Moderate",
+const PREDICTIVE_RISK = [
+  { area: "Prediabetes Progression", probability: "Moderate", interpretation: "Needs metabolic correction" },
+  { area: "Bone Loss (Osteopenia)", probability: "Moderate", interpretation: "Risk of future osteoporosis" },
+  { area: "Cardiovascular Risk", probability: "Mild", interpretation: "Preventive care needed" },
+  { area: "Chronic Inflammation", probability: "Moderate", interpretation: "Long-term disease trigger" },
+];
+
+const NUTRITION_STRATEGY = {
+  increase: [
+    "Calcium-rich foods (sesame, ragi, milk)",
+    "Vitamin D sources + sunlight",
+    "High-quality protein",
+    "Anti-inflammatory foods (turmeric, leafy greens)",
+  ],
+  reduce: [
+    "Refined sugar",
+    "Processed foods",
+    "Excess spicy & fermented foods (for Pitta balance)",
+  ]
+};
+
+const LIFESTYLE_OPTIMIZATION = [
+  "30–40 minutes daily exercise",
+  "Morning sunlight exposure (Vitamin D + circadian balance)",
+  "Stress reduction (Pranayama / Meditation)",
+  "Sleep before 11 PM",
+];
+
+const AYURVEDIC_HERBS = [
+  "Brahmi 2 gm before sleep",
+  "Trikatu ½ tsf before every meal",
 ];
 
 const NUTRITION_ITEMS = [
@@ -147,9 +175,9 @@ function getStatusColor(status: string): { color: string; backgroundColor: strin
 }
 
 function getBarColor(value: number): string {
-  if (value >= 85) return "#425af5";
-  if (value >= 70) return PURPLE.light;
-  if (value >= 50) return "#ffee00";
+  if (value >= 85) return "#00bb06";
+  if (value >= 70) return "#31f891";
+  if (value >= 50) return "#ff9900";
   return "#EF4444";
 }
 
@@ -300,7 +328,7 @@ function ReportWaveHeader({ mode }: { mode: "cover" | "section" }) {
 }
 function ReportFooter({ page, total }: { page: number; total: number }) {
   return (
-    <footer className="mt-auto border-t border-slate-200 pt-2 pb-4">
+    <footer className="mt-auto border-t border-slate-200 pt-1 pb-4">
       <div className="mb-6 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-300">
         <div className="flex items-center gap-4">
           <div>Ref ID: DXAI-{PATIENT.patientId}-2026</div>
@@ -312,7 +340,7 @@ function ReportFooter({ page, total }: { page: number; total: number }) {
           Digital Integrity Verified
         </div>
       </div>
-      <p className="mb-6 text-center text-[10px] font-medium leading-relaxed text-slate-400 max-w-2xl mx-auto italic">
+      <p className="mb-2 text-center text-[10px] font-medium leading-relaxed text-slate-400 max-w-2xl mx-auto italic">
         Disclaimer: This AI-powered health insight report is generated based on laboratory data provided. It is intended for informational and educational purposes only. Always consult with a qualified medical professional for diagnosis or treatment.
       </p>
       <div className="flex items-start gap-8 border-t border-slate-50 pt-6">
@@ -332,6 +360,53 @@ function ReportFooter({ page, total }: { page: number; total: number }) {
         </div>
       </div>
     </footer>
+  );
+}
+function DonutScore({ 
+  score, 
+  size = 42, 
+  color: customColor, 
+  strokeWidth = 6 
+}: { 
+  score: number; 
+  size?: number; 
+  color?: string; 
+  strokeWidth?: number 
+}) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (score / 100) * circumference;
+  const color = customColor || (score > 80 ? "#059669" : score > 60 ? "#D97706" : "#DC2626");
+  
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          className="text-slate-100"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-1000 ease-out"
+        />
+      </svg>
+      <div className="absolute flex flex-col items-center justify-center">
+        <span className="text-[10px] font-black leading-none text-slate-800">{score}</span>
+      </div>
+    </div>
   );
 }
 
@@ -371,6 +446,7 @@ export default function HealthReport() {
     try {
       const pageIds = [
         "reportPage1",
+        "reportPage2",
         "reportPage3",
         "reportPage4",
         "reportPage5",
@@ -489,18 +565,18 @@ export default function HealthReport() {
               printColorAdjust: "exact",
             }}
           >
-            <div className="flex min-h-[1123px] flex-col">
+            <div className="flex min-h-[1000px] flex-col">
               <ReportWaveHeader mode="cover" />
-              <div className="flex flex-1 flex-col p-12 pt-4">
+              <div className="flex flex-1 flex-col p-10 pt-0">
                 {/* Patient Information Grid */}
-                <div className="mt-0 grid grid-cols-2 gap-6">
+                <div className="mt-0 grid grid-cols-2 gap-3">
                   <div className="space-y-4">
                     <h2 className="flex items-center gap-2 text-[13px] font-black uppercase tracking-[0.15em] text-slate-400">
                       <FileText className="h-4 w-4 text-teal-600" />
                       Patient Profile
                     </h2>
-                    <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 ring-1 ring-slate-200/50">
-                      <dl className="grid gap-3">
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-2 ring-1 ring-slate-200/50">
+                      <dl className="grid gap-1">
                         {[
                           { label: "Full Name", value: PATIENT.name },
                           { label: "Patient ID", value: PATIENT.patientId },
@@ -516,7 +592,7 @@ export default function HealthReport() {
                     </div>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     <h2 className="flex items-center gap-2 text-[13px] font-black uppercase tracking-[0.15em] text-slate-400">
                       <ShieldAlert className="h-4 w-4 text-amber-500" />
                       Quick Status
@@ -536,58 +612,53 @@ export default function HealthReport() {
                 </div>
 
                 {/* Section 1: Key Findings */}
-                <div className="mt-6">
+                <div className="mt-3">
                   <h2 className="flex items-center gap-3 text-xl font-black tracking-tight text-slate-900">
                     <div className="h-8 w-1 bg-teal-500 rounded-full" />
-                    Section 1: Critical Lab Insights
+                    Section 1: Key Clinical Insights – Priority Areas
                   </h2>
-                  <p className="mt-2 text-sm font-medium text-slate-500 max-w-lg">
-                    Comprehensive analysis of markers operating outside optimal ranges. Immediate clinical correlation is recommended.
-                  </p>
+                  <h3 className="mt-3 text-[13px] font-black uppercase tracking-[0.1em] text-slate-400">Abnormal Lab Highlights</h3>
 
-                  <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-200/50">
+                  <div className="mt-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-200/50">
                     <table className="w-full text-left text-sm">
                       <thead>
                         <tr className="bg-slate-50/80">
                           <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Parameter</th>
                           <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Your Value</th>
-                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Reference</th>
+                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Optimal Range</th>
                           <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Clinical Interpretation</th>
+                          <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Ayurvedic Correlation</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {LAB_FINDINGS.map((row) => (
                           <tr key={row.test} className="hover:bg-slate-50 transition-colors">
                             <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="h-2 w-2 rounded-full bg-amber-400" />
-                                <span className="font-bold text-slate-900">{row.test}</span>
-                              </div>
+                              <span className="font-bold text-slate-900">{row.test}</span>
                             </td>
                             <td className="px-6 py-4 font-black text-rose-600 bg-rose-50/20">{row.yourValue}</td>
                             <td className="px-6 py-4 text-slate-500 font-medium">{row.idealRange}</td>
-                            <td className="px-6 py-4">
-                              <div className="space-y-0.5">
-                                <div className="font-bold text-slate-800">{row.meaning}</div>
-                                <div className="text-[11px] font-medium text-slate-400 italic">{row.subMeaning}</div>
-                              </div>
-                            </td>
+                            <td className="px-6 py-4 text-slate-700 font-bold">{row.meaning}</td>
+                            <td className="px-6 py-4 font-bold text-slate-900">{row.ayurvedicCorrelation}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
+                  <div className="mt-2 rounded-2xl bg-teal-50/50 p-4 border border-teal-200 italic">
+                    <span className="font-bold text-teal-800">Summary Insight:</span> <p className="text-teal-800"> Early metabolic imbalance with inflammation + bone weakening + impaired glucose metabolism</p>
+                  </div>
                 </div>
-                <ReportFooter page={1} total={5} />
+                <ReportFooter page={1} total={6} />
               </div>
             </div>
           </div>
 
           {/* Page 2 removed (content moved into Page 1) */}
 
-          {/* Page 3: Section 2 – Health Scorecard */}
+          {/* Page 2: Section 2 – Organ Function Scorecard */}
           <div
-            id="reportPage3"
+            id="reportPage2"
             className="report-page relative overflow-hidden bg-white shadow-xl"
             style={{
               width: A4_WIDTH_PX,
@@ -604,28 +675,73 @@ export default function HealthReport() {
               <div className="flex flex-1 flex-col p-12 pt-0">
                 <h2 className="flex items-center gap-3 text-xl font-black tracking-tight text-slate-900">
                   <div className="h-8 w-1 bg-teal-500 rounded-full" />
-                  Section 2: Systemic Health Scorecard
+                  Section 2: Organ Function Scorecard
                 </h2>
-                <p className="mt-2 text-sm font-medium text-slate-500">
-                  Biological system analysis based on cross-referenced lab markers. Higher scores indicate optimal physiological function.
-                </p>
+                <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-200/50">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="bg-slate-50/80">
+                        <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Organ System</th>
+                        <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500 text-center">Score</th>
+                        <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Status</th>
+                        <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Clinical Insight</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {ORGAN_SCORECARD.map((row) => (
+                        <tr key={row.system} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4 font-bold text-slate-900">{row.system}</td>
+                          <td className="px-6 py-4 text-center font-black text-slate-800">{row.score}</td>
+                          <td className="px-6 py-4">
+                            <span className="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider"
+                              style={{ color: getStatusColor(row.status).color, backgroundColor: getStatusColor(row.status).backgroundColor }}>
+                              {row.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-slate-700 font-medium">{row.insight}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <ReportFooter page={2} total={6} />
+              </div>
+            </div>
+          </div>
 
-                <div className="mt-2 flex flex-col items-center gap-4 lg:flex-col">
-                  <div className="relative h-[300px] w-full max-w-[500px] shrink-0">
-                    {/* Background glow for radar chart */}
+          {/* Page 3: Section 3 – Composite Health Indices */}
+          <div
+            id="reportPage3"
+            className="report-page relative overflow-hidden bg-white shadow-xl"
+            style={{
+              width: A4_WIDTH_PX,
+              maxWidth: "100%",
+              minHeight: A4_HEIGHT_PX,
+              boxShadow: `0 25px 50px -12px ${PURPLE.light}`,
+              border: `1px solid ${PURPLE.border}`,
+              WebkitPrintColorAdjust: "exact",
+              printColorAdjust: "exact",
+            }}
+          >
+            <div className="flex min-h-[1123px] flex-col">
+              <ReportWaveHeader mode="section" />
+              <div className="flex flex-1 flex-col p-8 pt-0">
+                <h2 className="flex items-center gap-3 text-xl font-black tracking-tight text-slate-900">
+                  <div className="h-6 w-1 bg-teal-500 rounded-full" />
+                  Section 3: Composite Health Indices
+                </h2>
+
+                <div className="mt-0 flex flex-col items-center gap-4 lg:flex-row">
+                  <div className="relative h-[300px] w-full max-w-[450px] shrink-0">
                     <div className="absolute inset-0 bg-teal-500/5 blur-[80px] rounded-full" />
                     <ResponsiveContainer width="100%" height="100%">
                       <RadarChart data={RADAR_DATA} outerRadius="75%">
                         <PolarGrid stroke={BRAND.border} strokeDasharray="4 4" />
                         <PolarAngleAxis
                           dataKey="subject"
-                          tick={{ fontSize: 10, fontWeight: 700, fill: BRAND.slate[400] }}
+                          tick={{ fontSize: 9, fontWeight: 700, fill: BRAND.slate[400] }}
                         />
-                        <PolarRadiusAxis
-                          domain={[0, 100]}
-                          tick={false}
-                          axisLine={false}
-                        />
+                        <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
                         <Radar
                           name="Efficiency"
                           dataKey="score"
@@ -634,7 +750,6 @@ export default function HealthReport() {
                           fill={BRAND.primary}
                           fillOpacity={0.15}
                         />
-                        {/* Custom Labels on Points */}
                         <Radar
                           dataKey="score"
                           stroke="none"
@@ -653,60 +768,52 @@ export default function HealthReport() {
                   </div>
 
                   <div className="w-full flex-1">
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                      {[
-                        HEALTH_SCORECARD.slice(0, 4),
-                        HEALTH_SCORECARD.slice(4, 8),
-                      ].map((col, colIdx) => (
-                        <div key={`col-${colIdx}`} className="space-y-2">
-                          {col.map((row) => (
-                            <div key={row.healthArea} className="flex flex-col rounded-2xl border border-slate-100 bg-white p-2 shadow-sm transition-all hover:border-teal-200 hover:shadow-md ring-1 ring-slate-200/50">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="space-y-0.5">
-                                  <div className="text-xs font-black uppercase tracking-wider text-slate-900">{row.healthArea}</div>
-                                  <div className="text-[10px] font-medium text-slate-400 leading-tight">{row.status}</div>
-                                </div>
-                                <div className="h-20 w-20 relative shrink-0">
-                                  <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                      <Pie
-                                        data={[
-                                          { name: 'score', value: row.score },
-                                          { name: 'remaining', value: 100 - row.score }
-                                        ]}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={25}
-                                        outerRadius={36}
-                                        fill="#8884d8"
-                                        dataKey="value"
-                                        startAngle={-15}
-                                        endAngle={-342}
-                                      >
-                                        <Cell fill={getBarColor(row.score)} />
-                                        <Cell fill="#e5e7eb" />
-                                      </Pie>
-                                    </PieChart>
-                                  </ResponsiveContainer>
-                                  <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 flex items-center justify-center">
-                                    <span className="text-xs font-black text-slate-900 whitespace-nowrap">{row.score}/100</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                    <div className="mt-0 grid grid-cols-1 gap-2">
+                      {COMPOSITE_INDICES.map((row) => (
+                        <div key={row.index} className="flex items-center justify-between rounded-xl border border-slate-100 bg-white p-3 shadow-sm ring-1 ring-slate-200/50">
+                          <div className="space-y-0.5">
+                            <div className="text-xs font-black uppercase tracking-wider text-slate-900">{row.index}</div>
+                            <div className="text-[10px] font-medium text-slate-400 leading-tight">{row.interpretation}</div>
+                          </div>
+                          <div className="flex shrink-0 items-center justify-center ml-4">
+                            <DonutScore score={row.score} />
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                <ReportFooter page={2} total={5} />
+                <div className="mt-0 border-t border-slate-100 pt-2">
+                  <h3 className="text-[14px] font-black text-slate-800">Bone Health Index (BHI) Interpretation</h3>
+                  <div className="mt-0 overflow-hidden rounded-xl border border-slate-100">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="px-4 py-2 font-black text-slate-500">Score</th>
+                          <th className="px-4 py-2 font-black text-slate-500">Meaning</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {BHI_RANGES.map((r, i) => (
+                          <tr key={i} className={i === 2 ? "bg-amber-50/50" : ""}>
+                            <td className="px-4 py-2 font-bold text-slate-700">{r.range}</td>
+                            <td className="px-4 py-2 font-medium text-slate-600">{r.meaning}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-4 text-sm font-black text-slate-900">
+                    Your Score: 65 → <span className="text-amber-600">Moderate bone weakening (needs correction phase)</span>
+                  </div>
+                </div>
+                <ReportFooter page={3} total={6} />
               </div>
             </div>
           </div>
 
-          {/* Page 4: Section 3 – Ayurveda Dashboard */}
+          {/* Page 4: Section 4 – Ayurveda Wellness Dashboard */}
           <div
             id="reportPage4"
             className="report-page relative overflow-hidden bg-white shadow-xl"
@@ -723,105 +830,83 @@ export default function HealthReport() {
             <div className="flex min-h-[1123px] flex-col">
               <ReportWaveHeader mode="section" />
               <div className="flex flex-1 flex-col p-12 pt-0">
-                {/* Header Section */}
                 <h2 className="flex items-center gap-3 text-xl font-black tracking-tight text-slate-900">
                   <div className="h-8 w-1 bg-teal-500 rounded-full" />
-                  Section 3: Ayurveda Wellness Inventory
+                  Section 4: Ayurveda Wellness Dashboard
                 </h2>
-                <p className="mt-1 text-sm font-medium text-slate-500">
-                  Multidimensional analysis of physiological and energetic balance using the Vata-Pitta-Kapha framework.
-                </p>
 
-                <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50/50 p-6 ring-1 ring-slate-200/50">
-                  <h3 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-teal-700">
-                    <Zap className="h-4 w-4" />
-                    Vikriti Analysis (Current State)
-                  </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-700">
-                    Your <span className="font-bold text-slate-900 underline decoration-teal-500/30">Pitta-dominant</span> pattern indicates current imbalance driven by excess metabolic heat, accelerated transformation, and potential inflammatory responses. Clinical correlation with liver and blood markers is advised.
-                  </p>
-                </div>
+                <div className="mt-2 space-y-2">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-3 ring-1 ring-slate-200/50">
+                    <h3 className="text-[13px] font-black uppercase tracking-[0.1em] text-teal-700">Prakriti–Vikriti Analysis</h3>
+                    <ul className="mt-0 space-y-2 list-disc pl-5 text-sm font-medium text-slate-700">
+                      <li>Current Imbalance (Vikriti): <span className="font-bold text-slate-900">Pitta Dominant</span></li>
+                      <li>Indicates:
+                        <ul className="mt-0 space-y-1 list-disc pl-6 font-normal text-slate-600">
+                          <li>Excess metabolic heat</li>
+                          <li>Inflammatory tendency</li>
+                          <li>Tissue depletion due to over-transformation</li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </div>
 
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  {[
-                    AYURVEDA_PARAMS.slice(0, 5),
-                    AYURVEDA_PARAMS.slice(5, 10),
-                  ].map((col, colIdx) => (
-                    <div key={`col-${colIdx}`} className="space-y-2">
-                      {col.map((p) => (
-                        <div key={p.name} className="flex flex-col rounded-2xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-teal-200 hover:shadow-md ring-1 ring-slate-200/50">
-                          <div className="flex items-start justify-between">
-                            <div className="space-y-0.5">
-                              <div className="text-xs font-black uppercase tracking-wider text-slate-900">{p.name}</div>
-                              <div className="text-[10px] font-medium text-slate-400 leading-tight">{p.desc}</div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-sm font-black text-teal-600">{p.value}</div>
-                              <div className="text-[8px] font-bold text-slate-300 uppercase letter-spacing-widest">Score</div>
-                            </div>
-                          </div>
-
-                          <div className="mt-2">
-                            <div style={{ height: 40 }} className="relative">
-                              {/* Custom Axis Labels for better readability */}
-                              <div className="absolute -bottom-1 left-0 right-0 flex justify-between text-[8px] font-black uppercase tracking-tighter text-slate-400">
-                                <span>Deficiency</span>
-                                <span>Balanced</span>
-                                <span>Excess</span>
-                              </div>
-                              <ResponsiveContainer width="100%" height="100%">
-                                <BarChart
-                                  layout="vertical"
-                                  data={[{
-                                    name: p.name,
-                                    // scale 0-100 into -100..100 with 50 as the midpoint
-                                    valueFromMid: ((Number(p.value) || 0) - 50) * 2
-                                  }]}
-                                  margin={{ top: 0, right: 10, left: 10, bottom: 0 }}
-                                >
-                                  <CartesianGrid vertical={true} horizontal={false} strokeDasharray="3 3" stroke={BRAND.slate[100]} />
-                                  <XAxis
-                                    type="number"
-                                    domain={[-100, 100]}
-                                    ticks={[-100, -50, 0, 50, 100]}
-                                    // tick values now represent a bipolar scale where 0 maps to score 50
-                                    tickFormatter={(val) => val.toString()}
-                                    fontSize={8}
-                                    fontWeight="bold"
-                                    axisLine={false}
-                                    tickLine={true}
-                                    style={{ fill: BRAND.slate[400] }}
-
-
-                                  />
-                                  <YAxis type="category" dataKey="name" hide />
-                                  <Bar
-                                    dataKey="valueFromMid"
-                                    barSize={10}
-                                    radius={[4, 4, 4, 4]}
-                                    isAnimationActive={false}
-                                    fill={getBarColor(Number(p.value) || 0)}
-                                  />
-                                  <ReferenceLine x={0} stroke={BRAND.slate[200]} strokeWidth={1} />
-                                </BarChart>
-                              </ResponsiveContainer>
-                            </div>
-                          </div>
+                  <div>
+                    <h3 className="text-[13px] font-black uppercase tracking-[0.1em] text-slate-400">Core Functional Parameters</h3>
+                    <div className="mt-0 grid grid-cols-3 gap-4">
+                      {AYURVEDA_PARAMS.map((p) => (
+                        <div key={p.name} className="flex flex-col items-center rounded-xl border border-slate-100 bg-white p-2.5 shadow-sm text-center">
+                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{p.name}</div>
+                          <DonutScore 
+                            score={p.value} 
+                            size={64} 
+                            color={p.name.includes("Ama") ? "#DC2626" : (p.value > 80 ? "#059669" : "#D97706")}
+                          />
+                          <div className="mt-1 text-[10px] font-bold text-slate-500 leading-tight h-8 flex items-center">{p.desc}</div>
                         </div>
                       ))}
                     </div>
-                  ))}
+                  </div>
+
+                  <div>
+                    <h3 className="text-[13px] font-black uppercase tracking-[0.1em] text-slate-400">Dhatu Assessment (Tissue Strength)</h3>
+                    <div className="mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-50">
+                          <tr>
+                            <th className="px-6 py-1 text-[11px] font-black uppercase tracking-widest text-slate-500">Dhatu</th>
+                            <th className="px-6 py-1 text-[11px] font-black uppercase tracking-widest text-slate-500">Score</th>
+                            <th className="px-6 py-1 text-[11px] font-black uppercase tracking-widest text-slate-500">Status</th>
+                            <th className="px-6 py-1 text-[11px] font-black uppercase tracking-widest text-slate-500">Interpretation</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs">
+                              {DHATU_ASSESSMENT.map((d) => (
+                                <tr key={d.name}>
+                                  <td className="px-6 py-1 font-bold text-slate-900">{d.name}</td>
+                                  <td className="px-6 py-1 text-center">
+                                    <DonutScore 
+                                      score={d.value} 
+                                      size={36} 
+                                      strokeWidth={5}
+                                      color={getBarColor(d.value)}
+                                    />
+                                  </td>
+                                  <td className="px-6 py-3 font-bold text-slate-600">{d.status}</td>
+                              <td className="px-6 py-3 text-slate-500">{d.interpretation}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
-                {/* 
-                <p className="mt-8 text-sm italic text-slate-400 leading-relaxed max-w-2xl border-l-2 border-slate-100 pl-4">
-                  Note: Ayurvedic assessments are complementary and identify functional patterns. Ensure standard clinical integration for any pathological concerns.
-                </p> */}
-                <ReportFooter page={3} total={5} />
+
+                <ReportFooter page={4} total={6} />
               </div>
             </div>
           </div>
 
-          {/* Page 5: Section 4 – Risk Forecast */}
+          {/* Page 5: Section 5 – Risk Intelligence */}
           <div
             id="reportPage5"
             className="report-page relative overflow-hidden bg-white shadow-xl"
@@ -840,46 +925,48 @@ export default function HealthReport() {
               <div className="flex flex-1 flex-col p-12 pt-10">
                 <h2 className="flex items-center gap-3 text-xl font-black tracking-tight text-slate-900">
                   <div className="h-8 w-1 bg-amber-500 rounded-full" />
-                  Section 4: Preventive Risk Forecast
+                  Section 5: Predictive Risk Intelligence
                 </h2>
                 <p className="mt-2 text-sm font-medium text-slate-500">
-                  Biomedical foresight based on your unique physiological markers. These represent areas of vulnerability if current trends remain unmanaged.
+                  (If current trends continue)
                 </p>
 
-                <div className="mt-8 space-y-3">
-                  {RISKS.map((risk, idx) => (
-                    <div key={idx} className="group flex items-center justify-between rounded-2xl border border-slate-100 bg-white p-4 shadow-sm ring-1 ring-slate-200/50 transition-all hover:border-amber-200">
-                      <div className="flex items-center gap-4">
-                        <div className="h-2 w-2 rounded-full bg-amber-400 group-hover:animate-ping" />
-                        <span className="text-sm font-bold text-slate-800">{risk}</span>
-                      </div>
-                      <span className="rounded-full bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-amber-700 ring-1 ring-amber-200/50">
-                        Elevated Risk
-                      </span>
-                    </div>
-                  ))}
+                <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Risk Area</th>
+                        <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Probability</th>
+                        <th className="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-slate-500">Interpretation</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {PREDICTIVE_RISK.map((r, i) => (
+                        <tr key={i} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4 font-bold text-slate-900">{r.area}</td>
+                          <td className="px-6 py-4">
+                            <span className="rounded-full bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-amber-700 ring-1 ring-amber-200/50">
+                              {r.probability}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-slate-600 font-medium">{r.interpretation}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
 
-                <div className="mt-10 rounded-2xl bg-slate-900 p-8 text-white shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/10 blur-[60px] rounded-full -mr-10 -mt-10" />
-                  <div className="relative flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center ring-1 ring-white/20 backdrop-blur-md">
-                      <ShieldCheck className="h-6 w-6 text-teal-400" />
-                    </div>
-                    <div className="space-y-1">
-                      <h3 className="text-lg font-black tracking-tight">Clinical Advisory</h3>
-                      <p className="text-sm text-slate-400 leading-relaxed max-w-lg">
-                        These forecasts are generated using advanced predictive modeling. They are designed to empower you with preemptive insight and should be used to facilitate deeper conversations with your primary healthcare provider.
-                      </p>
-                    </div>
-                  </div>
+                <div className="mt-8 text-[11px] font-bold text-slate-500 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  Note: These are preventive projections, not diagnoses.
                 </div>
-                <ReportFooter page={4} total={5} />
+
+                <ReportFooter page={5} total={6} />
               </div>
             </div>
           </div>
 
-          {/* Page 6: Section 5 – Action Plan */}
+          {/* Page 6: Section 6 – Action Plan */}
           <div
             id="reportPage6"
             className="report-page relative overflow-hidden bg-white shadow-xl"
@@ -898,48 +985,66 @@ export default function HealthReport() {
               <div className="flex flex-1 flex-col p-12 pt-10">
                 <h2 className="flex items-center gap-3 text-xl font-black tracking-tight text-slate-900">
                   <div className="h-8 w-1 bg-teal-600 rounded-full" />
-                  Section 5: Personalized Wellness Roadmap
+                  Section 6: Personalized Action Plan
                 </h2>
-                <p className="mt-2 text-sm font-medium text-slate-500">
-                  Targeted lifestyle and nutritional adjustments engineered to optimize your biological markers within 90 days.
-                </p>
 
-                <div className="mt-10 grid grid-cols-2 gap-8">
-                  <div className="space-y-5">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-1.5 ring-1 ring-emerald-200/50">
-                      <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                      <span className="text-[11px] font-black uppercase tracking-[0.15em] text-emerald-800">Nutrition Focus</span>
-                    </div>
-                    <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm ring-1 ring-slate-200/50 space-y-4">
-                      {NUTRITION_ITEMS.map((item, idx) => (
-                        <div key={idx} className="flex gap-3 group">
-                          <div className="mt-1 h-5 w-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 group-hover:bg-emerald-500 transition-colors">
-                            <span className="text-[10px] font-bold text-emerald-600 group-hover:text-white">{idx + 1}</span>
-                          </div>
-                          <span className="text-sm font-medium text-slate-700 leading-snug">{item}</span>
-                        </div>
-                      ))}
+                <div className="mt-10 space-y-10">
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-black text-slate-800">1. Nutrition Strategy (Ahara Chikitsa)</h3>
+                    <div className="grid grid-cols-2 gap-8">
+                      <div className="rounded-2xl border border-emerald-100 bg-emerald-50/20 p-6">
+                        <div className="text-[11px] font-black uppercase tracking-wider text-emerald-700 mb-4">Increase</div>
+                        <ul className="space-y-3">
+                          {NUTRITION_STRATEGY.increase.map((item, i) => (
+                            <li key={i} className="flex gap-2 text-sm font-medium text-slate-700">
+                              <BadgeCheck className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="rounded-2xl border border-rose-100 bg-rose-50/20 p-6">
+                        <div className="text-[11px] font-black uppercase tracking-wider text-rose-700 mb-4">Reduce</div>
+                        <ul className="space-y-3">
+                          {NUTRITION_STRATEGY.reduce.map((item, i) => (
+                            <li key={i} className="flex gap-2 text-sm font-medium text-slate-700">
+                              <AlertCircle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-5">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-cyan-50 px-4 py-1.5 ring-1 ring-cyan-200/50">
-                      <div className="h-2 w-2 rounded-full bg-cyan-500" />
-                      <span className="text-[11px] font-black uppercase tracking-[0.15em] text-cyan-800">Lifestyle Upgrade</span>
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-black text-slate-800">2. Lifestyle Optimization (Vihara)</h3>
+                    <div className="rounded-2xl border border-cyan-100 bg-cyan-50/20 p-6">
+                      <ul className="grid grid-cols-2 gap-4">
+                        {LIFESTYLE_OPTIMIZATION.map((item, i) => (
+                          <li key={i} className="flex gap-3 text-sm font-medium text-slate-700 border-l-2 border-cyan-500 pl-4">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm ring-1 ring-slate-200/50 space-y-4">
-                      {LIFESTYLE_ITEMS.map((item, idx) => (
-                        <div key={idx} className="flex gap-3 group">
-                          <div className="mt-1 h-5 w-5 rounded-full bg-cyan-50 flex items-center justify-center shrink-0 group-hover:bg-cyan-500 transition-colors">
-                            <span className="text-[10px] font-bold text-cyan-600 group-hover:text-white">{idx + 1}</span>
-                          </div>
-                          <span className="text-sm font-medium text-slate-700 leading-snug">{item}</span>
-                        </div>
-                      ))}
+                  </div>
+
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-black text-slate-800">3. Ayurvedic Herbs</h3>
+                    <div className="rounded-2xl border border-teal-100 bg-teal-50/20 p-6">
+                      <ul className="space-y-3">
+                        {AYURVEDIC_HERBS.map((item, i) => (
+                          <li key={i} className="flex gap-3 text-sm font-medium text-slate-700">
+                            <Leaf className="h-5 w-5 text-teal-600 shrink-0" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 </div>
-                <ReportFooter page={5} total={5} />
+                <ReportFooter page={6} total={6} />
 
               </div>
             </div>
